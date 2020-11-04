@@ -23,7 +23,7 @@ connection.connect(function(err) {
         choices: [
           "View all employees",
           "View all employees by department",
-          "View all employees by manager",
+          "View all employees by role",
           "Add employee",
           "Update employee role",
           "Update employee manager",
@@ -41,8 +41,8 @@ connection.connect(function(err) {
           empByDept();
           break;
   
-        case "View all employees by manager":
-          empByManager();
+        case "View all employees by role":
+          empByRole();
           break;
   
         case "Add employee":
@@ -120,19 +120,86 @@ function empByDept() {
         });
 
     });
-           
-
-    manageEmp();
 }
 
-function empByManager() {
+function empByRole() {
+    connection.query("SELECT * FROM role", function(err,results){
+        if (err) throw err;
+      //once i have the departments prompt user to choose which departments
+        inquirer.prompt([
+          {
+            type: 'rawlist',
+            name: 'role',
+            choices: function() {
+               // console.log(results);
+                var choiceArray = [];
+                for (var i = 0; i < results.length; i++) {
+                  choiceArray.push(results[i].id +" "+results[i].title);
+                }
+                return choiceArray;
+            },
+            message: 'Select a role:',
+          }
+        ]).then(function(answer) {
+            var choice = answer.role.split(" ");
+            chosenRole = choice[0];
+            connection.query("SELECT name_dept, title, first_name, last_name FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id WHERE role.id = " + chosenRole,
+            function(err, result) {
+              if (err) throw err;
+              console.table(result);
+              manageEmp();
+            });
+        });
 
-    manageEmp();
+    });
 }
 
 function addEmployee() {
-
-    manageEmp();
+    connection.query("SELECT * FROM role", function(err, results) {
+        if (err) throw err;
+        inquirer.prompt([
+          {
+            type: 'input',
+            name: 'firstname',
+            message: "Enter the employee's first name:"
+          },
+          {
+            type: 'input',
+            name: 'lastname',
+            message: "Enter the employee's last name:"
+          },
+          {
+            type: 'list',
+            name: 'role',
+            message: "Select the employee's role:",
+            choices: function() {
+                // console.log(results);
+                 var choiceArray = [];
+                 for (var i = 0; i < results.length; i++) {
+                   choiceArray.push(results[i].id +" "+results[i].title);
+                 }
+                 return choiceArray;
+             },
+            } 
+        ])
+      .then(function(res){
+        var choice = res.role.split(" ");
+        chosenRole = choice[0];
+        connection.query(
+          "INSERT INTO employee SET ?",
+          {
+            first_name: res.firstname,
+            last_name: res.lastname,
+            role_id: chosenRole
+          },
+          function(err) {
+            if (err) throw err;
+            console.log("Employee successfully added.");
+            manageEmp();
+          }
+        );
+      });
+    });
 }
 
 function updateRole() {
