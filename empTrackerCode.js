@@ -66,7 +66,7 @@ connection.connect(function(err) {
           break;
         }
       });
-  }
+}
 
 function allEmployees() {
     // connection.query("SELECT * FROM employee", function(err, res) {
@@ -169,7 +169,7 @@ function addEmployee() {
             message: "Enter the employee's last name:"
           },
           {
-            type: 'list',
+            type: 'rawlist',
             name: 'role',
             message: "Select the employee's role:",
             choices: function() {
@@ -218,6 +218,36 @@ function updateMan() {
 }
 
 function removeEmp() {
-
-    manageEmp();
+    connection.query("SELECT * FROM employee", function(err, results) {
+        if (err) throw err;
+    
+        inquirer
+          .prompt([
+            {
+              type: 'rawlist',
+              name: 'removeEmp',
+              message: 'Who would you like to remove?',
+              choices: function() {
+                var choiceArray = [];
+                for (var i = 0; i < results.length; i++) {
+                  choiceArray.push(results[i].id +" "+ results[i].first_name);
+                }
+                return choiceArray;
+              } 
+            }
+          ])
+          .then(function (answer){
+            var choice = answer.removeEmp.split(" ");
+            chosenEmp = choice[0];
+            connection.query("DELETE FROM employee WHERE ?", 
+            {
+              id: chosenEmp
+            },
+            function(err) {
+              if (err) throw err;
+              console.log("Successfully deleted employee id: " + chosenEmp);
+              manageEmp();
+            });
+        });
+    });
 }
