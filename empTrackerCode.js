@@ -3,14 +3,8 @@ var inquirer = require("inquirer");
 
 var connection = mysql.createConnection({
   host: "localhost",
-
-  
   port: 3306,
-
-  
   user: "root",
-
-  
   password: "MAKEway45@$%",
   database: "employee_db"
 });
@@ -83,13 +77,15 @@ function allEmployees() {
           
     //     manageEmp();
     //   });
+
     connection.query(
-        "SELECT first_name, last_name, title FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id ORDER BY title", 
+        "SELECT first_name, last_name, title, name_dept, salary FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id ORDER BY title", 
         function(err, res) {
         if (err) throw err;
         console.table(res);
         manageEmp();
       });
+
 }
 
 function empByDept() {
@@ -101,10 +97,10 @@ function empByDept() {
             type: 'rawlist',
             name: 'department',
             choices: function() {
-                console.log(results);
+               // console.log(results);
                 var choiceArray = [];
                 for (var i = 0; i < results.length; i++) {
-                  choiceArray.push(results[i].name);
+                  choiceArray.push(results[i].id +" "+results[i].name_dept);
                 }
                 return choiceArray;
             },
@@ -112,22 +108,19 @@ function empByDept() {
           }
         ])
         .then(function(answer) {
-            console.log(answer);
-            // get the information of the chosen item
-            var chosenDept;
-            for (var i = 0; i < results.length; i++) {
-              if (results[i].name === answer.department) {
-                chosenDept = results[i];
-              }
-              
-          }
-          connection.query("SELECT first_name, last_name,role_id, manage_id FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id WHERE department.name = " + chosenDept, 
-               function(err, result) {
-                if (err) throw err;
-                console.table(result);
-            })
+            var choice = answer.department.split(" ");
+            chosenDept = choice[0];
+            connection.query("SELECT name_dept, title, first_name, last_name FROM employee LEFT JOIN role ON employee.role_id = role.id LEFT JOIN department ON role.department_id = department.id WHERE ?", 
+            { department_id: chosenDept },
+            function(err, result) {
+              if (err) throw err;
+              console.table(result);
+              manageEmp();
+            });
         });
-     });
+
+    });
+           
 
     manageEmp();
 }
